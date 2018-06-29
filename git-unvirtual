@@ -2,18 +2,26 @@
 set -euo pipefail
 shopt -s extglob
 
-virtual_file_name=virtual.tar.gz
+backup_file_name=virtual.tar.gz
+stash_file_name=virtual_stash
 dotgit=$(git rev-parse --show-toplevel)/.git
-virtual_file=$dotgit/$virtual_file_name
+backup_file=$dotgit/$backup_file_name
+stash_file=$dotgit/$stash_file_name
 
-: "check the .git/$virtual_file_name existance"
-if [[ ! -e $virtual_file ]]; then
-  echo "the virtual file '.git/$virtual_file_name' does not exist" 1>&2
+: "check the .git/$backup_file_name existance"
+if [[ ! -e $backup_file ]]; then
+  echo "the backup file '.git/$backup_file_name' does not exist" 1>&2
   exit 1
 fi
 
-: "restore the git state from the virtual file"
-cd $dotgit
-rm -rf ./!(objects|$virtual_file_name)
-tar xzf ./$virtual_file_name
-rm ./$virtual_file_name
+: "restore the git state from the backup file"
+rm -rf $dotgit/!(objects|$backup_file_name)
+tar xzf $backup_file -C $dotgit
+rm $backup_file
+git reset --hard HEAD >/dev/null
+git clean -f >/dev/null
+
+if [[ -e $stash_file ]]; then
+  git stash apply $(cat $stash_file) >/dev/null
+  rm $stash_file
+fi

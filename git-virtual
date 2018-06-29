@@ -1,16 +1,23 @@
 #!/bin/bash
 set -euo pipefail
 
-virtual_file_name=virtual.tar.gz
+backup_file_name=virtual.tar.gz
+stash_file_name=virtual_stash
 dotgit=$(git rev-parse --show-toplevel)/.git
-virtual_file=$dotgit/$virtual_file_name
+backup_file=$dotgit/$backup_file_name
+stash_file=$dotgit/$stash_file_name
 
-: "check the .git/$virtual_file_name existance"
-if [[ -e $virtual_file ]]; then
-  echo "the virtual file '.git/$virtual_file_name' already exists" 1>&2
+: "check the .git/$backup_file_name existance"
+if [[ -e $backup_file ]]; then
+  echo "the backup file '.git/$backup_file_name' already exists" 1>&2
   exit 1
 fi
 
-: "backup the current git state to the virtual file"
+: "backup the current git state to the backup file"
+if git stash -u | grep -q 'Saved working directory'; then
+  git rev-parse stash > $stash_file
+  git stash pop >/dev/null
+fi
+
 cd $dotgit
-tar czf ./$virtual_file_name --exclude ./$virtual_file_name --exclude ./objects .
+tar czf ./$backup_file_name --exclude ./$backup_file_name --exclude ./objects .
