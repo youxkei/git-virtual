@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+shopt -s extglob
+
+virtual_file_name=virtual.tar.gz
+dotgit=$(git rev-parse --show-toplevel)/.git
+virtual_file=$dotgit/$virtual_file_name
+
+: "check the .git/$virtual_file_name existance"
+if [[ ! -e $virtual_file ]]; then
+  echo "the virtual file '.git/$virtual_file_name' does not exist" 1>&2
+  exit 1
+fi
+
+: "restore the git state from the virtual file"
+cd $dotgit
+rm -rf ./!(objects|$virtual_file_name)
+tar xzf ./$virtual_file_name
+rm ./$virtual_file_name

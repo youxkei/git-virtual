@@ -1,0 +1,16 @@
+#!/bin/bash
+set -euo pipefail
+
+virtual_file_name=virtual.tar.gz
+dotgit=$(git rev-parse --show-toplevel)/.git
+virtual_file=$dotgit/$virtual_file_name
+
+: "check the .git/$virtual_file_name existance"
+if [[ -e $virtual_file ]]; then
+  echo "the virtual file '.git/$virtual_file_name' already exists" 1>&2
+  exit 1
+fi
+
+: "backup the current git state to the virtual file"
+cd $dotgit
+tar czf ./$virtual_file_name --exclude ./$virtual_file_name --exclude ./objects .
